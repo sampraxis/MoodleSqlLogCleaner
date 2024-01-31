@@ -44,7 +44,7 @@ class CommandHandler
 
         Console.WriteLine("Removing log entries");
 
-        await Service.CleanLogs(Configuration.DeletingTables, fullpath, newFilename);
+        await Service.CleanLogs(fullpath, newFilename);
 
         Console.WriteLine($"Removed log entries, see more at {newFilename}");
         Console.WriteLine("Done");
@@ -53,7 +53,20 @@ class CommandHandler
 
     private string? GetConfigPath()
     {
-        return Command.GetArgument("--config", "-c");
+        var path = Command.GetArgument("--config", "-c");
+        if (path != default && File.Exists(path))
+        {
+            return path;
+        }
+
+        var executablePath = Path.GetDirectoryName(AppContext.BaseDirectory ?? "");
+        var configPath = Path.GetFullPath($"{executablePath}{Path.DirectorySeparatorChar}config.json");
+        if (File.Exists(configPath))
+        {
+            return configPath;
+        }
+
+        return default;
     }
 
     private string GetFilePath()
@@ -113,12 +126,19 @@ class CommandHandler
             Configuration.LoadFromJson(configPath);
         }
         
-        Console.WriteLine("Rapport of what would be deleted");
+        Console.WriteLine("Report of what would be deleted");
         Console.WriteLine();
         
         foreach (var table in Configuration.DeletingTables)
         {
             Console.WriteLine($"Would delete from {table}");
+        }
+
+        Console.WriteLine();
+        
+        foreach (var match in Configuration.OutputMatches)
+        {
+            Console.WriteLine($"Would output: {match}");
         }
 
         Console.WriteLine();

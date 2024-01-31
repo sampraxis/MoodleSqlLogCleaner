@@ -18,6 +18,8 @@ class Configuration : IConfiguration
         "mdl_upgrade_log",
     };
 
+    public IEnumerable<string> OutputMatches { get; set; } = new List<string> {};
+
     public void LoadFromJson()
     { 
         LoadFromJson(GetConfigPath());
@@ -25,7 +27,9 @@ class Configuration : IConfiguration
 
     public void LoadFromJson(string configPath)
     {
-        DeletingTables = ReadConfigFromJson(configPath).DeletingTables;
+        var config = ReadConfigFromJson(configPath);
+        DeletingTables = config.DeletingTables;
+        OutputMatches = config.OutputMatches;
     }
 
     private JsonConfiguration ReadConfigFromJson(string configPath)

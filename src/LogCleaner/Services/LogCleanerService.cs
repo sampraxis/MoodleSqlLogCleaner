@@ -1,19 +1,30 @@
 namespace LogCleaner.Services;
 
-class LogCleanerService : ILogCleanerService
+class LogCleanerService(
+    IFilterService deleteTablesFilter,
+    IFilterService outputMatchesFilter
+) : ILogCleanerService
 {
-
-    public async Task CleanLogs(IEnumerable<string> tables, string sourcePath, string outputPath)
+    public async Task CleanLogs(string sourcePath, string outputPath)
     {
         ValidateFile(sourcePath);
         
-        var writer = await GetOutputWriterAsync(outputPath);
+        using var writer = await GetOutputWriterAsync(outputPath);
+        long lineCount = 0;
+        var defaultColor = Console.ForegroundColor;
 
         await foreach (var line in File.ReadLinesAsync(sourcePath))
         {
-            if (tables.Any(table => line.StartsWith($"INSERT INTO `{table}`")))
+            ++lineCount;
+            if (deleteTablesFilter.IsMatch(line))
             {
                 continue;
+            }
+            if (outputMatchesFilter.IsMatch(line))
+            {
+                Console.ForegroundColor = ConsoleColor.DarkRed;
+                Console.WriteLine($"Line {lineCount}: {line}");
+                Console.ForegroundColor = defaultColor;
             }
             await writer.WriteLineAsync(line);
         }
